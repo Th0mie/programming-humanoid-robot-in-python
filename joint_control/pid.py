@@ -1,9 +1,7 @@
 '''In this exercise you need to implement the PID controller for joints of robot.
-
 * Task:
     1. complete the control function in PIDController with prediction
     2. adjust PID parameters for NAO in simulation
-
 * Hints:
     1. the motor in simulation can simple modelled by angle(t) = angle(t-1) + speed * dt
     2. use self.y to buffer model prediction
@@ -35,9 +33,9 @@ class PIDController(object):
         self.e2 = np.zeros(size)
         # ADJUST PARAMETERS BELOW
         delay = 0
-        self.Kp = 0
-        self.Ki = 0
-        self.Kd = 0
+        self.Kp = 36
+        self.Ki = 0.5
+        self.Kd = 0.12
         self.y = deque(np.zeros(size), maxlen=delay + 1)
 
     def set_delay(self, delay):
@@ -53,6 +51,24 @@ class PIDController(object):
         @return control signal
         '''
         # YOUR CODE HERE
+
+        #print(self.u)
+        #print(self.e1)
+        #print(self.e2)
+
+        e = target - sensor
+
+        u1 = (self.Kp + self.Ki * self.dt + self.Kd / self.dt) * e
+        u2 = (self.Kp + (2 * self.Kd) / self.dt) * self.e1
+        u3 = (self.Kd / self.dt) * self.e2
+
+        self.u = self.u + u1 - u2 + u3
+        self.e2 = self.e1
+        self.e1 = e
+
+        #print(self.u)
+        #print(self.e1)
+        #print(self.e2)
 
         return self.u
 
