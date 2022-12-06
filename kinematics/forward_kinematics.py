@@ -22,7 +22,7 @@ import sys
 sys.path.append(os.path.join(os.path.abspath(os.path.dirname(__file__)), '..', 'joint_control'))
 
 from numpy.matlib import matrix, identity
-
+import numpy as np
 from recognize_posture import PostureRecognitionAgent
 
 
@@ -36,8 +36,36 @@ class ForwardKinematicsAgent(PostureRecognitionAgent):
         self.transforms = {n: identity(4) for n in self.joint_names}
 
         # chains defines the name of chain and joints of the chain
-        self.chains = {'Head': ['HeadYaw', 'HeadPitch']
+        self.chains = {'Head': ['HeadYaw', 'HeadPitch'],
+                       'LArm': ['LShoulderPitch', 'LShoulderRoll', 'LElbowYaw', 'LElbowRoll'],
+                       'LLeg': ['LHipYawPitch', 'LHipRoll', 'LHipPitch', 'LKneePitch', 'LAnklePitch', 'LAnkleRoll'],
+                       'RLeg': ['RHipYawPitch', 'RHipRoll', 'RHipPitch', 'RKneePitch', 'RAnklePitch', 'RAnkleRoll'],
+                       'RArm': ['RShoulderPitch', 'RShoulderRoll', 'RElbowYaw', 'RElbowRoll'],
                        # YOUR CODE HERE
+                       }
+
+        self.offset = {'HeadYaw': [0,0,0],
+                       'HeadPitch': [0,0,126.5],
+                       'LShoulderPitch': [0,98,100],
+                       'LShoulderRoll': [0,0,0],
+                       'LElbowYaw': [105,15,0],
+                       'LElbowRoll': [0,0,0],
+                       'LHipYawPitch': [0,50,-85],
+                       'LHipRoll': [0,0,0],
+                       'LHipPitch': [0,0,0],
+                       'LKneePitch': [0,0,-100],
+                       'LAnklePitch': [0,0,-102.9],
+                       'LAnkleRoll': [0,0,0],
+                       'RHipYawPitch': [0,-50,-85],
+                       'RHipRoll': [0,0,0],
+                       'RHipPitch': [0,0,0],
+                       'RKneePitch': [0,0,-100],
+                       'RAnklePitch': [0,0,-102.9],
+                       'RAnkleRoll': [0,0,0],
+                       'RShoulderPitch': [0,-98,100],
+                       'RShoulderRoll': [0,0,0],
+                       'RElbowYaw': [105,-15,0],
+                       'RElbowRoll': [0,0,0],
                        }
 
     def think(self, perception):
@@ -55,6 +83,28 @@ class ForwardKinematicsAgent(PostureRecognitionAgent):
         T = identity(4)
         # YOUR CODE HERE
 
+        sinus = np.sin(joint_angle)
+        cosinus = np.cos(joint_angle)
+
+        #print(joint_name)
+        #print(self.offset[joint_name][1])
+
+        if 'Yaw' in joint_name:
+            T = matrix([[cosinus,sinus,0,self.offset[joint_name][0]],
+                        [-sinus,cosinus,0,self.offset[joint_name][1]],
+                        [0,0,1,self.offset[joint_name][2]],
+                        [0,0,0,1]])
+        elif 'Pitch' in joint_name:
+            T = matrix([[cosinus,0,sinus,self.offset[joint_name][0]],
+                        [0,1,0,self.offset[joint_name][1]],
+                        [-sinus,0,cosinus,self.offset[joint_name][2]],
+                        [0,0,0,1]])
+        else:
+            T = matrix([[1,0,0,self.offset[joint_name][0]],
+                        [0,cosinus,-sinus,self.offset[joint_name][1]],
+                        [0,sinus,cosinus,self.offset[joint_name][2]],
+                        [0,0,0,1]])
+
         return T
 
     def forward_kinematics(self, joints):
@@ -69,7 +119,7 @@ class ForwardKinematicsAgent(PostureRecognitionAgent):
                 Tl = self.local_trans(joint, angle)
                 # YOUR CODE HERE
 
-                self.transforms[joint] = T
+                self.transforms[joint] = np.dot(T,Tl)
 
 if __name__ == '__main__':
     agent = ForwardKinematicsAgent()
